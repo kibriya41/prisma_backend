@@ -1,37 +1,47 @@
-# SCIC / EJP-13 Backend REST API Documentation
+# Marketplace API — Documentation
 
-Base URL: `http://localhost:5000/api/v1`
+**Base URL**: `http://localhost:5000/api`
 
-Standard Response Structure:
+---
+
+## Standard Response Formats
+
+**Success:**
 ```json
 {
   "success": true,
-  "message": "Operation response message",
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "total": 42
-  },
-  "data": { ... }
+  "message": "Operation description",
+  "data": {}
 }
 ```
 
-Standard Error Structure:
+**Success with Pagination:**
+```json
+{
+  "success": true,
+  "message": "Operation description",
+  "meta": { "page": 1, "limit": 10, "total": 42 },
+  "data": []
+}
+```
+
+**Error:**
 ```json
 {
   "success": false,
-  "message": "Error details message",
-  "error": { ... }
+  "message": "Error description",
+  "error": {}
 }
 ```
 
 ---
 
-## 1. Auth Module
+## 1. Auth
 
-### POST `/auth/register`
-- **Auth**: Public
-- **Request Body**:
+### POST `/auth/register` — Register a new user
+**Auth**: Public
+
+**Request Body:**
 ```json
 {
   "name": "John Doe",
@@ -39,255 +49,322 @@ Standard Error Structure:
   "password": "password123"
 }
 ```
-- **Response** (`201 Created`):
+
+**Response `201`:**
 ```json
 {
   "success": true,
   "message": "User registered successfully",
   "data": {
-    "id": "uuid-string",
+    "id": "uuid",
     "name": "John Doe",
     "email": "john@example.com",
     "role": "USER",
     "isDeleted": false,
-    "createdAt": "2026-08-12T11:00:00.000Z",
-    "updatedAt": "2026-08-12T11:00:00.000Z"
+    "createdAt": "...",
+    "updatedAt": "..."
   }
 }
 ```
 
-### POST `/auth/login`
-- **Auth**: Public
-- **Request Body**:
+| Status | Meaning |
+|--------|---------|
+| 201 | Created successfully |
+| 400 | Validation error |
+| 409 | Email already in use |
+
+---
+
+### POST `/auth/login` — Login
+**Auth**: Public
+
+**Request Body:**
 ```json
 {
   "email": "john@example.com",
   "password": "password123"
 }
 ```
-- **Response** (`200 OK`):
+
+**Response `200`:**
 ```json
 {
   "success": true,
   "message": "User logged in successfully",
   "data": {
-    "accessToken": "eyJhbGciOi...",
-    "refreshToken": "eyJhbGciOi..."
+    "accessToken": "eyJ...",
+    "refreshToken": "eyJ..."
   }
 }
 ```
 
----
-
-## 2. User Module
-
-### GET `/users`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Query Params**: `page` (default `1`), `limit` (default `10`)
-- **Response** (`200 OK`):
-```json
-{
-  "success": true,
-  "message": "Users retrieved successfully",
-  "meta": { "page": 1, "limit": 10, "total": 1 },
-  "data": [
-    {
-      "id": "uuid-string",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "role": "USER",
-      "isDeleted": false,
-      "createdAt": "2026-08-12T11:00:00.000Z",
-      "updatedAt": "2026-08-12T11:00:00.000Z"
-    }
-  ]
-}
-```
-
-### GET `/users/:id`
-- **Auth**: Bearer Token (`ADMIN` or Self)
-- **Response** (`200 OK`):
-```json
-{
-  "success": true,
-  "message": "User retrieved successfully",
-  "data": {
-    "id": "uuid-string",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "role": "USER",
-    "isDeleted": false,
-    "createdAt": "2026-08-12T11:00:00.000Z",
-    "updatedAt": "2026-08-12T11:00:00.000Z"
-  }
-}
-```
-
-### PATCH `/users/:id`
-- **Auth**: Bearer Token (`ADMIN` or Self)
-- **Request Body**:
-```json
-{
-  "name": "John Updated",
-  "role": "ADMIN"
-}
-```
-- **Response** (`200 OK`): User object.
-
-### DELETE `/users/:id`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Action**: Soft deletes user (`isDeleted: true`).
-- **Response** (`200 OK`): User object.
+| Status | Meaning |
+|--------|---------|
+| 200 | Logged in |
+| 400 | Validation error |
+| 401 | Invalid credentials |
+| 404 | User not found |
 
 ---
 
-## 3. Category Module
+## 2. Users
 
-### POST `/categories`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Request Body**:
+> **Authorization Header**: `Bearer <accessToken>`
+
+### GET `/users` — Get all users
+**Auth**: ADMIN only
+
+**Query Params**: `page`, `limit`
+
+**Response `200`**: Paginated list of users.
+
+---
+
+### GET `/users/:id` — Get user by ID
+**Auth**: ADMIN or Self
+
+**Response `200`**: User object.
+
+| Status | Meaning |
+|--------|---------|
+| 200 | Found |
+| 403 | Forbidden |
+| 404 | Not found |
+
+---
+
+### PATCH `/users/:id` — Update user
+**Auth**: ADMIN or Self
+
+**Request Body:**
+```json
+{ "name": "Updated Name" }
+```
+
+**Response `200`**: Updated user object.
+
+---
+
+### DELETE `/users/:id` — Soft-delete user
+**Auth**: ADMIN only
+
+**Response `200`**: User object with `isDeleted: true`.
+
+---
+
+## 3. Categories
+
+### POST `/categories` — Create category
+**Auth**: ADMIN
+
+**Request Body:**
 ```json
 {
   "name": "Electronics",
   "slug": "electronics"
 }
 ```
-- **Response** (`201 Created`): Category object.
+> `slug` is optional — auto-generated from `name` if omitted.
 
-### GET `/categories`
-- **Auth**: Public
-- **Query Params**: `page`, `limit`
-- **Response** (`200 OK`): List of active categories.
+**Response `201`**: Category object.
 
-### GET `/categories/:id`
-- **Auth**: Public
-- **Response** (`200 OK`): Category object with associated products.
-
-### PATCH `/categories/:id`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Request Body**:
-```json
-{
-  "name": "Home Electronics"
-}
-```
-- **Response** (`200 OK`): Updated category object.
-
-### DELETE `/categories/:id`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Action**: Soft deletes category (`isDeleted: true`).
-- **Response** (`200 OK`): Category object.
+| Status | Meaning |
+|--------|---------|
+| 201 | Created |
+| 409 | Duplicate name/slug |
 
 ---
 
-## 4. Product Module
+### GET `/categories` — Get all categories
+**Auth**: Public
 
-### POST `/products`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Request Body**:
+**Query Params**: `page`, `limit`
+
+**Response `200`**: Paginated category list.
+
+---
+
+### GET `/categories/:id` — Get category by ID
+**Auth**: Public
+
+**Response `200`**: Category with nested active products.
+
+---
+
+### PATCH `/categories/:id` — Update category
+**Auth**: ADMIN
+
+**Request Body:**
+```json
+{ "name": "Updated Name" }
+```
+
+---
+
+### DELETE `/categories/:id` — Soft-delete category
+**Auth**: ADMIN
+
+---
+
+## 4. Products
+
+### POST `/products` — Create product
+**Auth**: ADMIN
+
+**Request Body:**
 ```json
 {
   "title": "Wireless Headphones",
-  "description": "High quality bluetooth headphones",
-  "price": 99.99,
+  "description": "Optional description",
+  "price": 199.99,
   "stock": 50,
   "status": "ACTIVE",
   "categoryId": "category-uuid"
 }
 ```
-- **Response** (`201 Created`): Product object with category.
 
-### GET `/products`
-- **Auth**: Public
-- **Query Params**:
-  - `searchTerm` (searches title & description)
-  - `categoryId`
-  - `status` (`ACTIVE`, `INACTIVE`, `OUT_OF_STOCK`)
-  - `minPrice`, `maxPrice`
-  - `page`, `limit`
-  - `sortBy`, `sortOrder` (`asc` / `desc`)
-- **Response** (`200 OK`): Paginated product list.
-
-### GET `/products/:id`
-- **Auth**: Public
-- **Response** (`200 OK`): Product object with category and active reviews.
-
-### PATCH `/products/:id`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Request Body**: Partial product object.
-- **Response** (`200 OK`): Updated product object.
-
-### DELETE `/products/:id`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Action**: Soft deletes product (`isDeleted: true`).
-- **Response** (`200 OK`): Product object.
+`status` options: `ACTIVE`, `INACTIVE`, `OUT_OF_STOCK`
 
 ---
 
-## 5. Review Module
+### GET `/products` — Get all products
+**Auth**: Public
 
-### POST `/reviews`
-- **Auth**: Bearer Token (`USER` / `ADMIN`)
-- **Request Body**:
+**Query Params:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `searchTerm` | string | Search in title and description |
+| `categoryId` | string | Filter by category UUID |
+| `status` | string | `ACTIVE`, `INACTIVE`, `OUT_OF_STOCK` |
+| `minPrice` | number | Min price filter |
+| `maxPrice` | number | Max price filter |
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 10) |
+| `sortBy` | string | Field to sort by (default: `createdAt`) |
+| `sortOrder` | string | `asc` or `desc` |
+
+---
+
+### GET `/products/:id` — Get product by ID
+**Auth**: Public
+
+**Response `200`**: Product with category and active reviews.
+
+---
+
+### PATCH `/products/:id` — Update product
+**Auth**: ADMIN
+
+---
+
+### DELETE `/products/:id` — Soft-delete product
+**Auth**: ADMIN
+
+---
+
+## 5. Reviews
+
+### POST `/reviews` — Create a review
+**Auth**: USER or ADMIN
+
+**Request Body:**
 ```json
 {
   "rating": 5,
-  "comment": "Amazing sound quality!",
+  "comment": "Great product!",
   "productId": "product-uuid"
 }
 ```
-- **Response** (`201 Created`): Review object.
 
-### GET `/reviews`
-- **Auth**: Public
-- **Query Params**: `productId`, `userId`, `page`, `limit`
-- **Response** (`200 OK`): List of active reviews.
+`rating` must be between 1 and 5.
 
-### DELETE `/reviews/:id`
-- **Auth**: Bearer Token (`USER` owner or `ADMIN`)
-- **Action**: Soft deletes review (`isDeleted: true`).
-- **Response** (`200 OK`): Review object.
+**Response `201`**: Review with user and product info.
 
 ---
 
-## 6. Order Module
+### GET `/reviews` — Get all reviews
+**Auth**: Public
 
-### POST `/orders`
-- **Auth**: Bearer Token (`USER` / `ADMIN`)
-- **Request Body**:
+**Query Params**: `productId`, `userId`, `page`, `limit`
+
+---
+
+### DELETE `/reviews/:id` — Soft-delete review
+**Auth**: Owner USER or ADMIN
+
+---
+
+## 6. Orders
+
+### POST `/orders` — Create an order
+**Auth**: USER or ADMIN
+
+**Request Body:**
 ```json
 {
   "items": [
-    {
-      "productId": "product-uuid",
-      "quantity": 2
-    }
+    { "productId": "uuid", "quantity": 2 }
   ]
 }
 ```
-- **Response** (`201 Created`): Order object with order items. Stock is automatically deducted transactionally.
 
-### GET `/orders`
-- **Auth**: Bearer Token (`USER` / `ADMIN`)
-- **Query Params**: `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `CANCELLED`), `page`, `limit`
-- **Notes**: `USER` only sees their own orders; `ADMIN` sees all orders.
-- **Response** (`200 OK`): List of orders.
+- Stock is automatically deducted per item (transactional).
+- Total is auto-calculated from product prices × quantities.
+- If a product has 0 remaining stock after the order, its status becomes `OUT_OF_STOCK`.
 
-### GET `/orders/:id`
-- **Auth**: Bearer Token (`USER` owner or `ADMIN`)
-- **Response** (`200 OK`): Order details with nested products and items.
+**Response `201`**: Full order with nested items.
 
-### PATCH `/orders/:id`
-- **Auth**: Bearer Token (`ADMIN`)
-- **Request Body**:
+---
+
+### GET `/orders` — Get all orders
+**Auth**: USER or ADMIN
+
+> ADMIN sees all orders. USER sees only their own.
+
+**Query Params**: `status`, `page`, `limit`
+
+`status` options: `PENDING`, `PROCESSING`, `COMPLETED`, `CANCELLED`
+
+---
+
+### GET `/orders/:id` — Get order by ID
+**Auth**: Owner USER or ADMIN
+
+---
+
+### PATCH `/orders/:id` — Update order status
+**Auth**: ADMIN only
+
+**Request Body:**
 ```json
-{
-  "status": "COMPLETED"
-}
+{ "status": "COMPLETED" }
 ```
-- **Response** (`200 OK`): Updated order.
 
-### DELETE `/orders/:id`
-- **Auth**: Bearer Token (`USER` owner or `ADMIN`)
-- **Action**: Soft deletes order (`isDeleted: true`).
-- **Response** (`200 OK`): Order object.
+---
+
+### DELETE `/orders/:id` — Soft-delete order
+**Auth**: Owner USER or ADMIN
+
+---
+
+## Enums Reference
+
+| Enum | Values |
+|------|--------|
+| `Role` | `ADMIN`, `USER` |
+| `ProductStatus` | `ACTIVE`, `INACTIVE`, `OUT_OF_STOCK` |
+| `OrderStatus` | `PENDING`, `PROCESSING`, `COMPLETED`, `CANCELLED` |
+
+---
+
+## Database Models
+
+| Model | Table | Soft Delete |
+|-------|-------|-------------|
+| User | `users` | ✅ |
+| Category | `categories` | ✅ |
+| Product | `products` | ✅ |
+| Review | `reviews` | ✅ |
+| Order | `orders` | ✅ |
+| OrderItem | `order_items` | — |

@@ -8,13 +8,14 @@ import orderRoutes from "../services/order/order.route";
 
 const router = Router();
 
+// ── Module Routes ──────────────────────────────────────────────────────────────
 const moduleRoutes = [
-  { path: "/auth", route: authRoutes },
-  { path: "/users", route: userRoutes },
+  { path: "/auth",       route: authRoutes },
+  { path: "/users",      route: userRoutes },
   { path: "/categories", route: categoryRoutes },
-  { path: "/products", route: productRoutes },
-  { path: "/reviews", route: reviewRoutes },
-  { path: "/orders", route: orderRoutes },
+  { path: "/products",   route: productRoutes },
+  { path: "/reviews",    route: reviewRoutes },
+  { path: "/orders",     route: orderRoutes },
 ];
 
 moduleRoutes.forEach((r) => router.use(r.path, r.route));

@@ -3,7 +3,7 @@ import ApiError from "../../utils/ApiError";
 
 const createCategory = async (payload: { name: string; slug?: string }) => {
   const slug =
-    payload.slug || payload.name.toLowerCase().replace(/[^a-z0-0]/g, "-");
+    payload.slug || payload.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
   const existing = await prisma.category.findFirst({
     where: { OR: [{ name: payload.name }, { slug }] },
@@ -64,7 +64,7 @@ const updateCategory = async (
 
   const dataToUpdate: { name?: string; slug?: string } = { ...payload };
   if (payload.name && !payload.slug) {
-    dataToUpdate.slug = payload.name.toLowerCase().replace(/[^a-z0-0]/g, "-");
+    dataToUpdate.slug = payload.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
   }
 
   const updated = await prisma.category.update({

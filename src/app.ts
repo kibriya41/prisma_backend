@@ -5,19 +5,24 @@ import globalErrorHandler from "./middlewares/globalErrorHandler";
 
 const app = express();
 
+// ── Middlewares ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/v1", routes);
+// ── API Routes ─────────────────────────────────────────────────────────────────
+app.use("/api", routes);
 
+// ── Health Check ───────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {
-  res.send({ message: "SCIC/EJP-13 API is running" });
+  res.json({ success: true, message: "Marketplace API is running 🚀" });
 });
 
-app.use((req, res) => {
+// ── 404 Handler ────────────────────────────────────────────────────────────────
+app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
+// ── Global Error Handler ───────────────────────────────────────────────────────
 app.use(globalErrorHandler);
 
 export default app;
