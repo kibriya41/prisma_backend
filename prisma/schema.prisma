@@ -1,30 +1,124 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model User{
-  id String @id @default(uuid())
-  name String
-  email String @unique
-  age Int
-  createdAt DateTime @default(now())
-
-  
+enum Role {
+  ADMIN
+  USER
 }
 
-model Product{
-  id String @id @default(uuid())
-  title String
-  price Float
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews   Review[]
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  price       Float
+  stock       Int           @default(0)
+  status      ProductStatus @default(ACTIVE)
+  isDeleted   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+
+  reviews     Review[]
+  orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@map("reviews")
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  status    OrderStatus @default(PENDING)
+  total     Float
+  isDeleted Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+
+  items     OrderItem[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  quantity  Int
+  price     Float
+
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
 }
